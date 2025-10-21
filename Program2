@@ -1,0 +1,93 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+class Equipo
+{
+    public int Id { get; set; }
+    public string? Nombre { get; set; }
+}
+
+class Competicion
+{
+    public int Id { get; set; }
+    public string? Nombre { get; set; }
+}
+
+class Partido
+{
+    public int Id { get; set; }
+    public int Equipo1Id { get; set; }
+    public int Equipo2Id { get; set; }
+    public int CompeticionId { get; set; }
+    public string? Resultado { get; set; }
+    public DateOnly Fecha { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        List<string> datos = new()
+        {
+            "Real Madrid;Barcelona;2-1;Liga;2025-10-12",
+            "Atlético de Madrid;Sevilla;1-0;Liga;2025-10-13",
+            "Barcelona;Valencia;3-2;Copa del Rey;2025-10-14",
+            "Sevilla;Real Madrid;0-2;Liga;2025-10-15",
+            "Valencia;Atlético de Madrid;1-1;Copa del Rey;2025-10-16",
+            "Real Madrid;Atlético de Madrid;2-2;Liga;2025-10-17",
+            "Barcelona;Sevilla;4-0;Liga;2025-10-18",
+            "Valencia;Real Madrid;0-1;Copa del Rey;2025-10-19",
+            "Atlético de Madrid;Barcelona;1-3;Liga;2025-10-20",
+            "Sevilla;Valencia;2-2;Copa del Rey;2025-10-21"
+        };
+
+        // === EQUIPOS ===
+        var equipos = datos
+            .SelectMany(l => new[] { l.Split(';')[0], l.Split(';')[1] })
+            .Distinct()
+            .Select((nombre, i) => new Equipo { Id = i + 1, Nombre = nombre })
+            .ToList();
+
+        // === COMPETICIONES ===
+        var competiciones = datos
+            .Select(l => l.Split(';')[3])
+            .Distinct()
+            .Select((nombre, i) => new Competicion { Id = i + 1, Nombre = nombre })
+            .ToList();
+
+        // === PARTIDOS ===
+        var partidos = datos.Select((linea, i) =>
+        {
+            var p = linea.Split(';');
+            return new Partido
+            {
+                Id = i + 1,
+                Equipo1Id = equipos.First(e => e.Nombre == p[0]).Id,
+                Equipo2Id = equipos.First(e => e.Nombre == p[1]).Id,
+                CompeticionId = competiciones.First(c => c.Nombre == p[3]).Id,
+                Resultado = p[2],
+                Fecha = DateOnly.Parse(p[4])
+            };
+        }).ToList();
+
+        // === MOSTRAR RESULTADOS ===
+        Console.WriteLine("\n=== EQUIPOS ===");
+        equipos.ForEach(e => Console.WriteLine($"{e.Id}: {e.Nombre}"));
+
+        Console.WriteLine("\n=== COMPETICIONES ===");
+        competiciones.ForEach(c => Console.WriteLine($"{c.Id}: {c.Nombre}"));
+
+        Console.WriteLine("\n=== PARTIDOS ===");
+        partidos.ForEach(p =>
+        {
+            var eq1 = equipos.First(e => e.Id == p.Equipo1Id).Nombre!;
+            var eq2 = equipos.First(e => e.Id == p.Equipo2Id).Nombre!;
+            var comp = competiciones.First(c => c.Id == p.CompeticionId).Nombre!;
+            Console.WriteLine($"{p.Id}: {eq1} vs {eq2} ({p.Resultado}) - {comp} - {p.Fecha}");
+        });
+
+        Console.WriteLine("\n=== RESUMEN ===");
+        Console.WriteLine($"Equipos: {equipos.Count}, Competiciones: {competiciones.Count}, Partidos: {partidos.Count}");
+    }
+}
